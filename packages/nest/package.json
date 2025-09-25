@@ -1,0 +1,26 @@
+{
+  "name": "@specpilot/nest",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18 <23"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rimraf dist || rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.0",
+    "typescript": "^5.6.0"
+  }
+}
