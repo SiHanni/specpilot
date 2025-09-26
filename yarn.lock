@@ -59,6 +59,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@specpilot/nest@workspace:packages/nest"
   dependencies:
+    "@specpilot/core": "workspace:*"
     rimraf: "npm:^6.0.0"
     typescript: "npm:^5.6.0"
   peerDependencies:

@@ -7,17 +7,16 @@
     "strict": true,
     "declaration": true,
     "sourceMap": true,
-    "outDir": "dist",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-
     "baseUrl": ".",
     "paths": {
       "@specpilot/core": ["packages/core/src/index.ts"],
       "@specpilot/nest": ["packages/nest/src/index.ts"],
-      "@specpilot/rules": ["packages/rules/src/index.ts"]
+      "@specpilot/rules": ["packages/rules/src/index.ts"],
+      "@specpilot/cli": ["packages/cli/src/index.ts"]
     }
   }
 }

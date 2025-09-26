@@ -1,31 +1,40 @@
+<!-- 목적: Nest 어댑터의 역할/사용 시점/트리거/2단계 이후 계획을 문서화 -->
+
 # @specpilot/nest
 
-**Nest 전용 어댑터**. 데코레이터와 스캐너로 Nest 컨벤션을 이해해 core가 쓰는 **리치 메타**를 만든다.
+SpecPilot의 **Nest 런타임 어댑터**입니다.  
+컨트롤러/핸들러에 `@SpecPilot({...})` 데코레이터를 달면, **개발 환경에서** 런타임에 해당 API를 분석하고 테스트 스켈레톤을 생성합니다.
 
-### 역할
+- NestJS에서 사용하는 데코레이터 + 모듈 옵션 제공.
+- @SpecPilot({ feedback, generateTest }) 데코레이터(컨트롤러/핸들러에 부착)
+- SpecPilotModule.forRoot({ enabled, outDir, trigger })
+- 앱이 실행 중일 때 데코레이터가 붙은 엔드포인트만 골라 분석/테스트 생성을 트리거하기 위함.
+- 호환: Nest는 peerDependencies로만 요구(소비자 프로젝트 버전에 맞춤).
 
-- **데코레이터**: `@AutoSpec({ feedback, generateTest, unit, e2e })`
-- **스캐너**: 컨트롤러/핸들러/가드/필터/인터셉터/DTO 제약/예외 패턴 수집
-- (옵션) E2E 스모크 템플릿
-
-### 피어 의존
-
-- `@nestjs/common`, `@nestjs/core`를 **peerDependencies**로 선언 → 소비자 Nest와 호환
-
-### 메타(예시)
+## 사용 개요
 
 ```ts
-type NestTargetMeta = {
-  kind: 'controller'|'service'|'guard'|'pipe';
-  file: string;
-  symbol: string;
-  routes?: Array<{ method: string; path: string }>;
-  dto?: Record<string, unknown>;
-  guards?: string[];
-  filters?: string[];
-  throws?: string[];
-  effects?: string[]; // publish/emit/save 등
-};
-php-template
-Copy code
+// app.module.ts
+@Module({
+  imports: [
+    SpecPilotModule.forRoot({
+      enabled: process.env.NODE_ENV !== 'production',
+      outDir: 'test',
+      trigger: 'first-hit', // 또는 'bootstrap'
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+```ts
+// users.controller.ts
+@Controller('users')
+export class UsersController {
+  @Post('signup')
+  @SpecPilot({ feedback: true, generateTest: true })
+  async signUp() {
+    /* ... */
+  }
+}
 ```
