@@ -1,5 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "outDir": "./dist", "rootDir": "./src" },
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".", // ← 루트 설정 덮어쓰기
+    "paths": {} // ← 루트 paths 비활성화(중요)
+  },
   "include": ["src"]
 }

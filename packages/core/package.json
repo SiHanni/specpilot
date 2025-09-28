@@ -15,7 +15,11 @@
     "clean": "rimraf dist || rm -rf dist",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "ts-morph": "^22.0.0"
+  },
   "devDependencies": {
+    "@types/node": "^20.11.30",
     "rimraf": "^6.0.0",
     "typescript": "^5.6.0"
   }
