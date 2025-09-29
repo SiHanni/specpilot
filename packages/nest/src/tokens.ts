@@ -1,24 +1,60 @@
-// 목적: Nest 모듈 옵션 DI 토큰/타입
+// 목적: SpecPilot 모듈 옵션/토큰 정의 (서비스/컨트롤러 테스트 생성 토글 포함)
+
+export type TriggerMode = 'bootstrap' | 'first-hit';
+
+export interface SpecPilotPolicy {
+  /** public 라우트로 취급할 메타 키들 */
+  publicMetaKeys?: string[];
+  /** GET이라도 보호가 필요할 수 있는 경로 힌트 */
+  sensitiveGetPathHints?: string[];
+}
+
+export interface SpecPilotModuleOptions {
+  /** 기능 전체 on/off (기본 true) */
+  enabled?: boolean;
+  /** 실행 트리거: 부팅 시 전체 / 첫 호출 시 1회 */
+  trigger?: TriggerMode;
+
+  /** 리포트 출력 디렉터리 (기본 .specpilot/reports) */
+  reportDir?: string;
+  /** 테스트 파일 출력 디렉터리 (기본 test) */
+  outDir?: string;
+
+  /** 정책(메타 키/민감 GET 힌트) */
+  policy?: SpecPilotPolicy;
+
+  /** 컨트롤러 단위 스펙 생성 여부 (기본 true) */
+  generateControllerTests?: boolean;
+  /** ✅ 서비스(핵심) 단위 스펙 생성 여부 (기본 true) */
+  generateServiceTests?: boolean;
+}
+
+/** DI 토큰 */
 export const SPEC_PILOT_OPTIONS = 'SPEC_PILOT_OPTIONS';
 
-/**
- * - enabled: boolean; // 개발 환경에서만 true 권장
- * - outDir: string; // 생성되는 .spec 출력 디렉토리 (예: 'test')
- * - trigger?: 'bootstrap' | 'first-hit'; // 실행 타이밍(부팅/첫 요청)
- */
-export type SpecPilotModuleOptions = {
-  enabled: boolean; // 개발 환경에서만 true 권장
-  outDir: string; // 생성되는 .spec 출력 디렉토리 (예: 'test')
-  trigger?: 'bootstrap' | 'first-hit'; // 실행 타이밍(부팅/첫 요청) — 2단계에서 구현
-  /** 리포트 파일 출력 디렉토리 (프로젝트 루트 기준) */
-  reportDir?: string; // 기본값: '.specpilot/reports'
-  /** 정책 옵션 */
-  policy?: SpecPilotPolicyOptions;
-};
-
-export type SpecPilotPolicyOptions = {
-  /** GET이어도 보호가 필요할 가능성이 큰 경로 조각(소문자 비교) */
-  sensitiveGetPathHints?: string[]; // 기본값 예: ['me','profile','account','settings','admin','billing','orders','payments','private']
-  /** public 라우트로 취급할 메타 키 목록 */
-  publicMetaKeys?: string[]; // 기본값 예: ['isPublic','public','allowAnonymous']
-};
+/** 내부 기본값 헬퍼 */
+export function withDefaults(
+  opts?: SpecPilotModuleOptions
+): Required<SpecPilotModuleOptions> {
+  return {
+    enabled: opts?.enabled ?? true,
+    trigger: opts?.trigger ?? 'bootstrap',
+    reportDir: opts?.reportDir ?? '.specpilot/reports',
+    outDir: opts?.outDir ?? 'test',
+    policy: {
+      publicMetaKeys: opts?.policy?.publicMetaKeys ?? [
+        'isPublic',
+        'public',
+        'allowAnonymous',
+      ],
+      sensitiveGetPathHints: opts?.policy?.sensitiveGetPathHints ?? [
+        '/me',
+        '/profile',
+        '/account',
+        '/admin',
+      ],
+    },
+    generateControllerTests: opts?.generateControllerTests ?? true,
+    generateServiceTests: opts?.generateServiceTests ?? true,
+  };
+}

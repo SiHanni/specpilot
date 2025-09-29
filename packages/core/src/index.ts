@@ -3,3 +3,8 @@ export { analyzeControllerToService } from './tsgraph.js';
 export { detectSwaggerUsage } from './swagger.js';
 export { detectAuthContextUsage } from './auth-usage.js';
 export { resolveClassFileAbs } from './tsutil.js';
+export { getFirstServiceCall } from './callgraph.js';
+export { getHandlerParamCount } from './handler-introspect.js';
+export { generateDtoSampleLiteral } from './dto-sample.js';
+export { findLikelyHttpExceptionForClass } from './exceptions-hints.js';
+export { analyzeServiceMethod } from './service-introspect.js';

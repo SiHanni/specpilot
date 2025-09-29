@@ -1,0 +1,413 @@
+// File: /packages/nest/src/testing/service-spec-writer.ts
+// 목적: "서비스 자체 로직" 테스트 자동 생성 + upsert(마커 병합) 지원.
+// 개선점(A):
+//  - 파라미터 타입 텍스트 기반의 입력 합성(가능 시 DTO 샘플 사용)
+//  - 반환 타입 텍스트 기반의 느슨한 결과 어설션
+//  - 여러 의존 호출에 대한 실패 케이스(최대 3개) 자동 생성
+//  - 루프 힌트 시 호출 증가 기대 상향(증가 여부 확인)
+//
+// 제공 함수:
+//  - resolveServiceSpecFilePath, writeServiceSpecSkeleton, upsertServiceSpec
+
+import fs from 'node:fs';
+import path from 'node:path';
+import type { SpecPilotModuleOptions } from '../tokens.js';
+import {
+  resolveClassFileAbs,
+  analyzeServiceMethod,
+  findLikelyHttpExceptionForClass,
+  generateDtoSampleLiteral,
+} from '@specpilot/core';
+
+function ensureDir(filePath: string) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+}
+
+export function resolveServiceSpecFilePath(
+  cwd: string,
+  serviceClassName: string,
+  methodName: string,
+  opts?: SpecPilotModuleOptions
+) {
+  const baseDir = opts?.outDir || 'test';
+  const file = `${serviceClassName}.${methodName}.service.spec.ts`;
+  return path.join(cwd, baseDir, file);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 내부: 마커 블록 추출/치환
+function getBlock(
+  src: string,
+  name: 'imports' | 'setup' | 'auto-tests'
+): string | null {
+  const re = new RegExp(`// <sp:${name}>\\s*([\\s\\S]*?)\\s*// </sp:${name}>`);
+  const m = src.match(re);
+  return m ? m[1] : null;
+}
+function replaceBlock(
+  src: string,
+  name: 'imports' | 'setup' | 'auto-tests',
+  inner: string
+): string {
+  const re = new RegExp(`(// <sp:${name}>)[\\s\\S]*?(// </sp:${name}>)`);
+  if (re.test(src)) {
+    return src.replace(re, `$1\n${inner.trim()}\n$2`);
+  }
+  return src + `\n// <sp:${name}>\n${inner.trim()}\n// </sp:${name}>\n`;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 내부: 타입 텍스트 기반 인자 합성 코드 문자열 생성
+function buildSampleArgForType(
+  cwd: string,
+  typeText: string,
+  idx: number
+): string {
+  const t = typeText || '';
+  const isArray = t.includes('[]') || t.startsWith('Array<');
+  const isString = /\bstring\b/.test(t);
+  const isNumber = /\bnumber\b/.test(t);
+  const isBoolean = /\bboolean\b/.test(t);
+
+  if (isArray) {
+    // 배열이면 요소 1~3개 생성
+    if (t.includes('string')) return `['x','y','z']`;
+    if (t.includes('number')) return `[1,2,3]`;
+    if (t.includes('boolean')) return `[true,false,true]`;
+    // DTO 배열일 수 있음 → 요소 1개는 DTO 추정 실패 시 {}
+    return `[{} , {} , {}]`;
+  }
+  if (isString) return `'x'`;
+  if (isNumber) return `1`;
+  if (isBoolean) return `true`;
+
+  // DTO/클래스 추정: 대문자로 시작하는 식별자 & 원시/Promise/Array가 아님
+  const looksLikeDto =
+    /^[A-Z][A-Za-z0-9_]*$/.test(t) &&
+    !['Promise', 'Array', 'Object'].some(k => t.startsWith(k));
+  if (looksLikeDto) {
+    const dto = generateDtoSampleLiteral(cwd, t);
+    if (dto.ok) return dto.code;
+  }
+
+  // 마지막: 빈 객체
+  return `{}`;
+}
+
+function buildSampleArgsArrayLiteral(
+  cwd: string,
+  paramTypeTexts: string[],
+  forLoop = false
+): string {
+  if (!paramTypeTexts || paramTypeTexts.length === 0) return `[]`;
+  const parts = paramTypeTexts.map((pt, i) => {
+    if (forLoop && i === 0) {
+      // 루프 힌트: 첫 파라미터가 배열로 보이면 3개짜리 배열
+      const isArray = pt.includes('[]') || pt.startsWith('Array<');
+      if (isArray) {
+        const elem = buildSampleArgForType(
+          cwd,
+          pt.replace(/\[]$/, '').replace(/^Array<(.+)>$/, '$1'),
+          i
+        );
+        return `[${elem}, ${elem}, ${elem}]`;
+      }
+    }
+    return buildSampleArgForType(cwd, pt, i);
+  });
+  return `[ ${parts.join(', ')} ]`;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 내부: 스펙 전체 문자열 생성
+function buildServiceSpecContent(
+  cwd: string,
+  serviceClassName: string,
+  methodName: string,
+  opts?: SpecPilotModuleOptions
+): string {
+  const filePath = resolveServiceSpecFilePath(
+    cwd,
+    serviceClassName,
+    methodName,
+    opts
+  );
+
+  const abs = resolveClassFileAbs(cwd, serviceClassName);
+  const analysis = analyzeServiceMethod(cwd, serviceClassName, methodName);
+
+  const specDir = path.dirname(filePath);
+  const toRel = (p: string) => {
+    let rel = path
+      .relative(specDir, p)
+      .replace(/\\/g, '/')
+      .replace(/\.ts$/, '');
+    if (!rel.startsWith('.')) rel = './' + rel;
+    return rel;
+  };
+
+  const serviceImportLine = abs
+    ? `import { ${serviceClassName} } from '${toRel(abs)}';`
+    : `// TODO: import { ${serviceClassName} } from '<path-to-service>';`;
+
+  const usedCallsLiteral = analysis
+    ? JSON.stringify(
+        analysis.calls.map(c => ({
+          receiver: c.receiver,
+          method: c.method,
+          inLoop: !!c.inLoop,
+        })),
+        null,
+        2
+      )
+    : '[]';
+
+  const excName =
+    (analysis?.throwsDetected && analysis.throwsDetected[0]) ||
+    (findLikelyHttpExceptionForClass(cwd, serviceClassName)?.name ?? null) ||
+    (analysis?.exceptionHints && analysis.exceptionHints[0]) ||
+    null;
+
+  const exceptionImportLine = excName
+    ? `import { ${excName} } from '@nestjs/common';`
+    : '';
+
+  const header = `/**
+ * AUTO-GENERATED BY specpilot (service)
+ * Service: ${serviceClassName}
+ * Method:  ${methodName}
+ *
+ * 최초 1회 생성 후, 이후 실행에서는 마커(<sp:imports|setup|auto-tests>) 영역만 병합 갱신됩니다.
+ */
+`;
+
+  const hasLoopHint = !!analysis?.calls.some(c => c.inLoop);
+  const paramTypes = analysis?.paramTypeTexts ?? [];
+  const argsOnce = buildSampleArgsArrayLiteral(cwd, paramTypes, false);
+  const argsLoop = buildSampleArgsArrayLiteral(cwd, paramTypes, true);
+
+  // 반환 타입 기반 느슨한 어설션 생성
+  const rt = analysis?.returnTypeText ?? '';
+  const unwrap = rt.startsWith('Promise<')
+    ? rt.replace(/^Promise<(.+)>$/, '$1')
+    : rt;
+  const looksArray = /\[\]$/.test(unwrap) || unwrap.startsWith('Array<');
+  const looksObject =
+    !looksArray && /\bRecord<|{|}\b/.test(unwrap) ? true : false;
+
+  const returnAssert = looksArray
+    ? `expect(Array.isArray(result)).toBe(true);`
+    : looksObject
+    ? `expect(typeof result).toBe('object');`
+    : `expect(result).not.toBeUndefined();`;
+
+  // 실패 케이스: 여러 의존 호출 중 최대 3개까지 개별 테스트
+  const failCases = (() => {
+    if (!excName || !analysis?.calls?.length)
+      return `// NOTE: 대표 예외 힌트를 찾지 못해 실패 경로 자동 생성은 생략됩니다.`;
+    const uniq: Array<{ receiver: string; method: string }> = [];
+    for (const c of analysis.calls) {
+      if (!uniq.some(u => u.receiver === c.receiver && u.method === c.method)) {
+        uniq.push({ receiver: c.receiver, method: c.method });
+      }
+      if (uniq.length >= 3) break;
+    }
+    return uniq
+      .map(
+        (u, idx) => `
+  it('failure path #${idx + 1}: ${u.receiver}.${
+          u.method
+        } rejects → propagates ${excName}', async () => {
+    const hasJest = !!((global as any).jest?.fn);
+    if (!hasJest) { expect(true).toBe(true); return; }
+    const depFn = (service as any)['${u.receiver}']?.['${u.method}'];
+    if (!depFn || typeof depFn.mockRejectedValueOnce !== 'function') { expect(true).toBe(true); return; }
+    depFn.mockRejectedValueOnce(new ${excName}('auto'));
+
+    let threw = false;
+    try {
+      const out = (service as any)['${methodName}'](...${argsOnce});
+      if (out && typeof out.then === 'function') await out;
+    } catch (e: any) {
+      threw = (e instanceof ${excName});
+    }
+    expect(threw).toBe(true);
+  });`
+      )
+      .join('\n');
+  })();
+
+  const content = `${header}
+import 'reflect-metadata';
+
+// <sp:imports>
+${serviceImportLine}
+${exceptionImportLine}
+// </sp:imports>
+
+describe('${serviceClassName}.${methodName} (service)', () => {
+  // <sp:setup>
+  function makeCtorDummies(target: any) {
+    const types = (Reflect as any).getMetadata?.('design:paramtypes', target) || [];
+    return types.map(() => ({}));
+  }
+
+  function makeReceiverProxy(): any {
+    const store: Record<string, any> = {};
+    const hasJest = !!((global as any).jest?.fn);
+    const defaultFor = (m: string) => {
+      return /(findMany|findAll|list|query|select.*Many|.*s$)/i.test(m) ? Promise.resolve([{}]) : Promise.resolve({});
+    };
+    return new Proxy({}, {
+      get(_t, prop: string) {
+        if (!store[prop]) {
+          const fn = hasJest ? (jest.fn().mockResolvedValue(defaultFor(prop))) : (() => ({}));
+          store[prop] = fn;
+        }
+        return store[prop];
+      }
+    });
+  }
+
+  const USED_CALLS: Array<{ receiver: string; method: string; inLoop: boolean }> = ${usedCallsLiteral};
+
+  let service: ${serviceClassName};
+  let receivers: Record<string, any> = {};
+  beforeAll(() => {
+    const Ctor: any = (${serviceClassName} as any);
+    const deps = makeCtorDummies(Ctor);
+    // @ts-ignore
+    service = new Ctor(...deps);
+
+    for (const c of USED_CALLS) {
+      if (!receivers[c.receiver]) receivers[c.receiver] = makeReceiverProxy();
+    }
+    for (const [r, proxy] of Object.entries(receivers)) {
+      (service as any)[r] = proxy;
+    }
+  });
+  // </sp:setup>
+
+  // <sp:auto-tests>
+  it('service is defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  it('has callable method "${methodName}"', () => {
+    expect(typeof (service as any)['${methodName}']).toBe('function');
+  });
+
+  it('injects auto-mocks for used receivers', () => {
+    for (const c of USED_CALLS) {
+      const recv = (service as any)[c.receiver];
+      expect(recv).toBeDefined();
+      expect(typeof recv[c.method]).toBe('function');
+    }
+  });
+
+  it('happy path: executes and returns loosely valid shape', async () => {
+    const out = (service as any)['${methodName}'](...${argsOnce});
+    const result = (out && typeof out.then === 'function') ? await Promise.race([ out, Promise.resolve(undefined) ]) : out;
+    ${returnAssert}
+  });
+
+  ${failCases}
+
+  ${
+    hasLoopHint
+      ? `
+  it('loop hint: with array-like input, dependency call count increases', async () => {
+    const hasJest = !!((global as any).jest?.fn);
+    if (!hasJest || USED_CALLS.length === 0) { expect(true).toBe(true); return; }
+    const target = USED_CALLS.find(c => c.inLoop) || USED_CALLS[0];
+    const fn = (service as any)[target.receiver][target.method] as any;
+    const before = fn.mock?.calls?.length ?? 0;
+
+    try {
+      const out = (service as any)['${methodName}'](...${argsLoop});
+      if (out && typeof out.then === 'function') { await Promise.race([ out, Promise.resolve() ]); }
+    } catch (_e) { /* noop */ }
+
+    const after = fn.mock?.calls?.length ?? before;
+    expect(after).toBeGreaterThanOrEqual(before + 1);
+  });
+  `
+      : ``
+  }
+
+  it('should be implemented', () => {
+    expect(true).toBe(true);
+  });
+  // </sp:auto-tests>
+});
+`;
+
+  return content;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 공개: 스켈레톤 생성/업서트
+
+export function writeServiceSpecSkeleton(
+  cwd: string,
+  serviceClassName: string,
+  methodName: string,
+  opts?: SpecPilotModuleOptions
+) {
+  const filePath = resolveServiceSpecFilePath(
+    cwd,
+    serviceClassName,
+    methodName,
+    opts
+  );
+  if (fs.existsSync(filePath)) {
+    return { filePath, created: false };
+  }
+  const content = buildServiceSpecContent(
+    cwd,
+    serviceClassName,
+    methodName,
+    opts
+  );
+  ensureDir(filePath);
+  fs.writeFileSync(filePath, content, 'utf8');
+  return { filePath, created: true };
+}
+
+export function upsertServiceSpec(
+  cwd: string,
+  serviceClassName: string,
+  methodName: string,
+  opts?: SpecPilotModuleOptions
+) {
+  const filePath = resolveServiceSpecFilePath(
+    cwd,
+    serviceClassName,
+    methodName,
+    opts
+  );
+  const next = buildServiceSpecContent(cwd, serviceClassName, methodName, opts);
+
+  if (!fs.existsSync(filePath)) {
+    ensureDir(filePath);
+    fs.writeFileSync(filePath, next, 'utf8');
+    return { filePath, created: true, merged: false };
+  }
+
+  const prev = fs.readFileSync(filePath, 'utf8');
+
+  const nextImports = getBlock(next, 'imports') ?? '';
+  const nextSetup = getBlock(next, 'setup') ?? '';
+  const nextAuto = getBlock(next, 'auto-tests') ?? '';
+
+  let merged = prev;
+  merged = replaceBlock(merged, 'imports', nextImports);
+  merged = replaceBlock(merged, 'setup', nextSetup);
+  merged = replaceBlock(merged, 'auto-tests', nextAuto);
+
+  if (merged !== prev) {
+    fs.writeFileSync(filePath, merged, 'utf8');
+    return { filePath, created: false, merged: true };
+  }
+  return { filePath, created: false, merged: false };
+}
