@@ -1,9 +1,4 @@
-// File: /packages/core/src/service-introspect.ts
 // 목적: 서비스.<메서드> 정적 분석(의존 호출/루프/예외/트랜잭션/파라미터·반환 타입).
-// 개선점(B):
-// - getProject/클래스 조회 캐시 사용 → 재파싱 제거
-// - 분석 결과 자체도 TTL 캐시(기본 15초)
-
 import {
   Project,
   MethodDeclaration,
@@ -90,13 +85,13 @@ export function analyzeServiceMethod(
   if (hit && now - hit.at < TTL_MS) return hit.value;
 
   const project = getProject(cwd);
-  const { klass, sf } = findClassDeclCached(cwd, serviceClassName);
-  if (!klass || !sf) {
+  const { cls, sf } = findClassDeclCached(cwd, serviceClassName);
+  if (!cls || !sf) {
     ANALYSIS_CACHE.set(key, { at: now, value: null });
     return null;
   }
 
-  const method: MethodDeclaration | undefined = klass.getMethod(methodName);
+  const method: MethodDeclaration | undefined = cls.getMethod(methodName);
   if (!method) {
     ANALYSIS_CACHE.set(key, { at: now, value: null });
     return null;

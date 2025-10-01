@@ -1,5 +1,3 @@
-// 목적: 컨트롤러 핸들러 본문에서 `this.<serviceProp>.<method>(...)` 형태의
-//       "첫 번째 서비스 호출"을 찾아 serviceProp / serviceType / method를 반환
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import path from 'node:path';
 import fs from 'node:fs';
@@ -22,6 +20,7 @@ function findTsConfig(cwd: string): string | null {
   return candidates.find(f => fs.existsSync(f)) ?? null;
 }
 
+/** cwd/src 하위 모든 .ts파일을 전부 프로젝트에 추가 */
 function loadProject(cwd: string): Project {
   const tsconfig = findTsConfig(cwd);
   if (tsconfig)
@@ -45,17 +44,21 @@ function findClassDecl(
   return undefined;
 }
 
+/** 클래스 안의 특정 프로퍼티가 어떤 타입인지 문자열로 알아내는 함수
+ * - t1: 클래스 프로퍼티에서 찾은 타입 이름
+ * - t2: 생성자 파라미터에서 찾은 타입 이름
+ */
 function propTypeName(
-  klass: ClassDeclaration,
+  cls: ClassDeclaration,
   propName: string
 ): string | undefined {
   // class property
-  const prop = klass.getProperty(propName);
+  const prop = cls.getProperty(propName);
   const t1 = prop?.getType().getSymbol()?.getName();
   if (t1) return t1;
 
   // constructor param
-  const ctor: ConstructorDeclaration | undefined = klass.getConstructors()[0];
+  const ctor: ConstructorDeclaration | undefined = cls.getConstructors()[0];
   const param = ctor?.getParameters().find(p => p.getName() === propName);
   const t2 = param?.getType().getSymbol()?.getName();
   return t2;
@@ -74,10 +77,10 @@ export function getFirstServiceCall(
   handlerName: string
 ): FirstServiceCall | null {
   const project = loadProject(cwd);
-  const klass = findClassDecl(project, controllerName);
-  if (!klass) return null;
+  const cls = findClassDecl(project, controllerName);
+  if (!cls) return null;
 
-  const method: MethodDeclaration | undefined = klass.getMethod(handlerName);
+  const method: MethodDeclaration | undefined = cls.getMethod(handlerName);
   if (!method) return null;
 
   let result: FirstServiceCall | null = null;
@@ -103,7 +106,7 @@ export function getFirstServiceCall(
 
     // this.<serviceProp>.<method>(...)
     const serviceProp = targetName;
-    const serviceType = propTypeName(klass, serviceProp);
+    const serviceType = propTypeName(cls, serviceProp);
 
     result = { serviceProp, serviceType, method: methodName };
   });

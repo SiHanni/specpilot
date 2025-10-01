@@ -1,4 +1,3 @@
-// File: /packages/nest/src/testing/service-spec-writer.ts
 // 목적: "서비스 자체 로직" 테스트 자동 생성 + upsert(마커 병합) 지원.
 // 개선점(A):
 //  - 파라미터 타입 텍스트 기반의 입력 합성(가능 시 DTO 샘플 사용)

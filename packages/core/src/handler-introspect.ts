@@ -1,4 +1,3 @@
-// 목적: ts-morph로 컨트롤러 핸들러의 파라미터 개수를 조회합니다.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import path from 'node:path';
 import fs from 'node:fs';
@@ -36,16 +35,16 @@ function findClassDecl(
   return undefined;
 }
 
-/** 핸들러의 파라미터 개수를 반환합니다. 찾지 못하면 null. */
+/** 핸들러의 파라미터 개수를 반환. 찾지 못하면 null. */
 export function getHandlerParamCount(
   cwd: string,
   controllerName: string,
   handlerName: string
 ): number | null {
   const project = loadProject(cwd);
-  const klass = findClassDecl(project, controllerName);
-  if (!klass) return null;
-  const method: MethodDeclaration | undefined = klass.getMethod(handlerName);
+  const cls = findClassDecl(project, controllerName);
+  if (!cls) return null;
+  const method: MethodDeclaration | undefined = cls.getMethod(handlerName);
   if (!method) return null;
   return method.getParameters().length;
 }

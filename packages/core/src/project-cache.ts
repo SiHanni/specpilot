@@ -1,4 +1,3 @@
-// File: /packages/core/src/project-cache.ts
 // 목적: ts-morph Project를 cwd별로 캐싱해 재파싱을 줄인다.
 // - getProject(cwd): 같은 프로세스 내에서 재사용
 // - invalidateProject(cwd): 수동 무효화
@@ -57,7 +56,7 @@ export function invalidateProject(cwd: string) {
 export function findClassDeclCached(
   cwd: string,
   className: string
-): { klass: ClassDeclaration | null; sf: SourceFile | null } {
+): { cls: ClassDeclaration | null; sf: SourceFile | null } {
   const project = getProject(cwd);
 
   // 1) 캐시된 파일 경로가 있으면 바로 열어보기
@@ -65,8 +64,8 @@ export function findClassDeclCached(
   const cached = classDeclCache.get(key);
   if (cached) {
     const sf = project.getSourceFile(cached.sfPath);
-    const klass = sf?.getClass(className) ?? null;
-    if (klass) return { klass, sf: sf! };
+    const cls = sf?.getClass(className) ?? null;
+    if (cls) return { cls, sf: sf! };
     // 못 찾으면 캐시 무효
     classDeclCache.delete(key);
   }
@@ -76,8 +75,8 @@ export function findClassDeclCached(
     const k = sf.getClass(className);
     if (k) {
       classDeclCache.set(key, { sfPath: sf.getFilePath(), when: Date.now() });
-      return { klass: k, sf };
+      return { cls: k, sf };
     }
   }
-  return { klass: null, sf: null };
+  return { cls: null, sf: null };
 }

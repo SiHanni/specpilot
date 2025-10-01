@@ -1,4 +1,3 @@
-// 목적: 컨트롤러/핸들러에 Swagger 데코레이터(@ApiOperation/@ApiResponse/@ApiTags/@ApiBearerAuth) 적용되었는지 정적으로 감지해 플래그로 반환
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import path from 'node:path';
 import fs from 'node:fs';
@@ -47,7 +46,7 @@ function decNamesFromMethod(m: MethodDeclaration): Set<string> {
 }
 
 /**
- * 컨트롤러/핸들러의 Swagger 데코레이터 사용 여부를 감지합니다.
+ * 컨트롤러/핸들러의 Swagger 데코레이터 사용 여부를 감지.
  * 못 찾으면 null을 반환(상위에서 생략 처리).
  */
 export function detectSwaggerUsage(

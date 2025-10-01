@@ -49,6 +49,5 @@ export class SpecPilotModule implements OnModuleInit {
         );
       }
     }
-    // 'first-hit' 트리거는 다음 조각에서 인터셉터로 연결합니다.
   }
 }

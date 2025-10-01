@@ -17,9 +17,7 @@
     "baseUrl": ".",
     "paths": {
       "@specpilot/core": ["packages/core/src/index.ts"],
-      "@specpilot/nest": ["packages/nest/src/index.ts"],
-      "@specpilot/rules": ["packages/rules/src/index.ts"],
-      "@specpilot/cli": ["packages/cli/src/index.ts"]
+      "@specpilot/nest": ["packages/nest/src/index.ts"]
     }
   }
 }

@@ -1,8 +1,4 @@
-// File: /packages/nest/src/feedback/runner.ts
 // 목적: 라우트별 리포트 저장 + 테스트 파일 생성/병합(upsert).
-//       - 컨트롤러 스펙: upsert
-//       - 서비스 스펙: upsert
-
 import fs from 'node:fs';
 import path from 'node:path';
 

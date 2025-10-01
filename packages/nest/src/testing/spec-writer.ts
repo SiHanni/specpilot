@@ -1,4 +1,3 @@
-// File: /packages/nest/src/testing/spec-writer.ts
 // 목적: "컨트롤러 단위" 테스트 파일을 생성/업서트(upsert)한다.
 // - 최초 1회: 전체 파일 생성
 // - 이후 실행: 마커(<sp:imports|setup|auto-tests>) 블록만 덮어쓰기(수동 코드는 보존)

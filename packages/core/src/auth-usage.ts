@@ -3,17 +3,24 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { Project, ClassDeclaration, MethodDeclaration, Node } from 'ts-morph';
 
+/**
+ * usesReqUser: req.user 또는 request.user 을 사용해 접근하는지 확인
+ * hasCurrentUserDecorator: @CurrentUser() / @AuthUser() 를 사용하는지
+ * hasAuthLikeParamType: 파라미터 타입명이 User/Auth를 포함하는지
+ */
 export type AuthUsage = {
-  usesReqUser: boolean; // req.user / request.user 접근
-  hasCurrentUserDecorator: boolean; // @CurrentUser() / @AuthUser() 파라미터
-  hasAuthLikeParamType: boolean; // 파라미터 타입명이 User/Auth를 포함
+  usesReqUser: boolean;
+  hasCurrentUserDecorator: boolean;
+  hasAuthLikeParamType: boolean;
 };
 
+/** AST로 변환하기 위해 tsconfig 관련 파일을 찾음. */
 function findTsConfig(cwd: string): string | null {
   const candidates = [
     'tsconfig.json',
     'tsconfig.app.json',
     'tsconfig.base.json',
+    'tsconfig.build.json',
   ].map(p => path.join(cwd, p));
   return candidates.find(f => fs.existsSync(f)) ?? null;
 }

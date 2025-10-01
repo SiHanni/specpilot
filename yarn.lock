@@ -62,17 +62,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@specpilot/cli@workspace:packages/cli":
-  version: 0.0.0-use.local
-  resolution: "@specpilot/cli@workspace:packages/cli"
-  dependencies:
-    "@specpilot/core": "workspace:*"
-    "@specpilot/nest": "workspace:*"
-    rimraf: "npm:^6.0.0"
-    typescript: "npm:^5.6.0"
-  languageName: unknown
-  linkType: soft
-
 "@specpilot/core@workspace:*, @specpilot/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@specpilot/core@workspace:packages/core"
@@ -84,7 +73,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@specpilot/nest@workspace:*, @specpilot/nest@workspace:packages/nest":
+"@specpilot/nest@workspace:packages/nest":
   version: 0.0.0-use.local
   resolution: "@specpilot/nest@workspace:packages/nest"
   dependencies:
@@ -94,15 +83,6 @@ __metadata:
   peerDependencies:
     "@nestjs/common": ^10.0.0
     "@nestjs/core": ^10.0.0
-  languageName: unknown
-  linkType: soft
-
-"@specpilot/rules@workspace:packages/rules":
-  version: 0.0.0-use.local
-  resolution: "@specpilot/rules@workspace:packages/rules"
-  dependencies:
-    rimraf: "npm:^6.0.0"
-    typescript: "npm:^5.6.0"
   languageName: unknown
   linkType: soft
 

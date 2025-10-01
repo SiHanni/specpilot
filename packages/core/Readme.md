@@ -22,3 +22,10 @@ SpecPilot의 **엔진 베이스**
 - @CurrentUser() 또는 @AuthUser() 파라미터를 쓰는지,
 - 혹은 파라미터 타입명이 User / Auth 계열인지
 - 위의 사항을 ts-morph로 정적 분석을 하여 값을 반환
+
+### ts-morph : TypeScript AST를 고수준으로 다루게 해주는 라이브러리
+
+- Project : 분석 대상 프로젝트 컨테이너. tsconfig를 읽어 소스 파일/타입 정보를 로드
+- ClassDeclaration : AST 상의 클래스 선언 노드. 클래스 이름으로 메서드 찾는 동작 등 수행
+- MethodDeclaration : 메서드 선언 노드. 파라미터, 데코레이터, 본문(바디) 순회 등에 사용
+- Node : 모든 AST 노드의 베이스
