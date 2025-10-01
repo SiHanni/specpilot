@@ -27,7 +27,8 @@
   },
   "peerDependencies": {
     "@nestjs/common": "^10.0.0",
-    "@nestjs/core": "^10.0.0"
+    "@nestjs/core": "^10.0.0",
+    "@specpilot/core": "0.0.0"
   },
   "dependencies": {
     "@specpilot/core": "workspace:*"
