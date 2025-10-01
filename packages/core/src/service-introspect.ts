@@ -9,7 +9,7 @@ import {
   NewExpression,
   ThrowStatement,
 } from 'ts-morph';
-import { getProject, findClassDeclCached } from './project-cache.js';
+import { getProject, findClassDeclCached } from './project-cache';
 
 export type ServiceCallSite = {
   receiver: string;

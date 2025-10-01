@@ -11,7 +11,7 @@ import {
   MethodDeclaration,
   CallExpression,
 } from 'ts-morph';
-import { isOrmFetchName, terminalPropertyName } from './orm-signatures.js';
+import { isOrmFetchName, terminalPropertyName } from './orm-signatures';
 
 export type FeedbackIssue = {
   code: string; // 예: SP101

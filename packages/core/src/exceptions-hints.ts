@@ -1,5 +1,5 @@
 import { SyntaxKind } from 'ts-morph';
-import { findClassDeclCached } from './project-cache.js';
+import { findClassDeclCached } from './project-cache';
 
 const PRIORITY = [
   'NotFoundException',

@@ -2,9 +2,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { CollectedRoute } from '../services/scanner.service.js';
-import type { SpecPilotModuleOptions } from '../tokens.js';
-import { withDefaults } from '../tokens.js';
+import type { CollectedRoute } from '../services/scanner.service';
+import type { SpecPilotModuleOptions } from '../tokens';
+import { withDefaults } from '../tokens';
 
 import {
   makeReport,
@@ -13,8 +13,8 @@ import {
 } from '@specpilot/core';
 import type { FeedbackIssue } from '@specpilot/core';
 
-import { upsertControllerSpec } from '../testing/spec-writer.js';
-import { upsertServiceSpec } from '../testing/service-spec-writer.js';
+import { upsertControllerSpec } from '../testing/spec-writer';
+import { upsertServiceSpec } from '../testing/service-spec-writer';
 
 // ──────────────────────────────────────────────────────────────────────────────
 function writeReportToFs(

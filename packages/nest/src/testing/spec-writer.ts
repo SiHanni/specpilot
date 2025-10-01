@@ -12,8 +12,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import type { CollectedRoute } from '../services/scanner.service.js';
-import type { SpecPilotModuleOptions } from '../tokens.js';
+import type { CollectedRoute } from '../services/scanner.service';
+import type { SpecPilotModuleOptions } from '../tokens';
 import {
   resolveClassFileAbs,
   getFirstServiceCall,

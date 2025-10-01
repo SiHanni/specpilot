@@ -8,9 +8,9 @@ import { DiscoveryService, Reflector } from '@nestjs/core';
 import {
   SPEC_PILOT_META,
   SpecPilotOptions,
-} from '../decorators/specpilot.decorator.js';
+} from '../decorators/specpilot.decorator';
 import { RequestMethod } from '@nestjs/common';
-import { SPEC_PILOT_OPTIONS, SpecPilotModuleOptions } from 'src/tokens.js';
+import { SPEC_PILOT_OPTIONS, SpecPilotModuleOptions } from 'src/tokens';
 
 const PATH_METADATA = 'path' as const;
 const METHOD_METADATA = 'method' as const;

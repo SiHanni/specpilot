@@ -2,7 +2,7 @@ export {
   SpecPilot,
   SpecPilotOptions,
   SPEC_PILOT_META,
-} from './decorators/specpilot.decorator.js';
-export { SpecPilotModule } from './module.js';
-export { SPEC_PILOT_OPTIONS, SpecPilotModuleOptions } from './tokens.js';
-export { SpecPilotInterceptor } from './interceptors/specpilot.interceptor.js';
+} from './decorators/specpilot.decorator';
+export { SpecPilotModule } from './module';
+export { SPEC_PILOT_OPTIONS, SpecPilotModuleOptions } from './tokens';
+export { SpecPilotInterceptor } from './interceptors/specpilot.interceptor';

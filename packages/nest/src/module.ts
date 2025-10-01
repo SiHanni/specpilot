@@ -7,9 +7,9 @@ import {
   Logger,
 } from '@nestjs/common';
 import { DiscoveryModule, Reflector } from '@nestjs/core';
-import { SPEC_PILOT_OPTIONS, SpecPilotModuleOptions } from './tokens.js';
-import { SpecPilotScanner } from './services/scanner.service.js';
-import { runFeedbackForRoute } from './feedback/runner.js'; // ← 추가
+import { SPEC_PILOT_OPTIONS, SpecPilotModuleOptions } from './tokens';
+import { SpecPilotScanner } from './services/scanner.service';
+import { runFeedbackForRoute } from './feedback/runner'; // ← 추가
 
 @Module({
   imports: [DiscoveryModule],

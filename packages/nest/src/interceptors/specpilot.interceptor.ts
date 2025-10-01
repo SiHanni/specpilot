@@ -13,9 +13,9 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { SPEC_PILOT_OPTIONS, SpecPilotModuleOptions } from '../tokens.js';
-import { SpecPilotScanner } from '../services/scanner.service.js';
-import { runFeedbackForRoute } from '../feedback/runner.js';
+import { SPEC_PILOT_OPTIONS, SpecPilotModuleOptions } from '../tokens';
+import { SpecPilotScanner } from '../services/scanner.service';
+import { runFeedbackForRoute } from '../feedback/runner';
 
 @Injectable()
 export class SpecPilotInterceptor implements NestInterceptor {

@@ -10,11 +10,13 @@
   },
   "scripts": {
     "build": "yarn workspaces foreach -A run build",
+    "dev": "yarn workspaces foreach -A run dev",
     "clean": "yarn workspaces foreach -A run clean",
     "typecheck": "yarn workspaces foreach -A run typecheck"
   },
   "devDependencies": {
     "rimraf": "^6.0.0",
+    "tsup": "^8.0.0",
     "typescript": "^5.6.0"
   }
 }
